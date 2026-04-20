@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Adult Content Filter</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a22;
+      --surface2: #22222e;
+      --border: #2a2a38;
+      --accent: #6c63ff;
+      --accent-glow: rgba(108,99,255,0.25);
+      --green: #3ecf8e;
+      --red: #ff5c5c;
+      --amber: #f5a623;
+      --pink: #ff63c3;
+      --pink-glow: rgba(255,99,195,0.18);
+      --text: #e8e8f0;
+      --muted: #7a7a9a;
+      --radius: 10px;
+    }
+
+    body {
+      width: 340px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      user-select: none;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 13px 15px 11px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #9c63ff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 13px; font-weight: 600; }
+    .header-text p  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    /* ── Toggle row ── */
+    .toggle-row {
+      padding: 12px 15px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .toggle-label strong { font-size: 13px; font-weight: 500; }
+    .toggle-label span   { font-size: 11px; color: var(--muted); display: block; margin-top: 1px; }
+    .switch { position: relative; width: 42px; height: 24px; }
+    .switch input { display: none; }
+    .switch-track {
+      position: absolute; inset: 0; border-radius: 12px;
+      background: var(--border); cursor: pointer;
+      transition: background .2s, box-shadow .2s;
+    }
+    .switch-track::after {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--muted); top: 3px; left: 3px;
+      transition: transform .22s cubic-bezier(.4,0,.2,1), background .2s;
+    }
+    input:checked + .switch-track { background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+    input:checked + .switch-track::after { transform: translateX(18px); background: #fff; }
+
+    /* ── Stats ── */
+    .stats {
+      padding: 11px 15px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 9px 11px;
+    }
+    .stat-value { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── Status bar ── */
+    .status-bar {
+      padding: 9px 15px;
+      display: flex; align-items: center; gap: 7px;
+      border-bottom: 1px solid var(--border);
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px rgba(62,207,142,.6);
+      flex-shrink: 0; transition: background .3s, box-shadow .3s;
+    }
+    .status-dot.off { background: var(--red); box-shadow: 0 0 6px rgba(255,92,92,.4); }
+    .status-text { font-size: 11px; color: var(--muted); }
+    .status-text strong { color: var(--text); font-weight: 500; }
+
+    /* ── Tab bar ── */
+    .tab-bar { display: flex; border-bottom: 1px solid var(--border); }
+    .tab-btn {
+      flex: 1; background: none; border: none; cursor: pointer;
+      padding: 9px 3px; font-family: 'DM Sans', sans-serif;
+      font-size: 10px; font-weight: 500; color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+      text-transform: uppercase; letter-spacing: .04em;
+      position: relative;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Log ── */
+    .log-header {
+      padding: 9px 15px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .log-header span { font-size: 11px; color: var(--muted); }
+    .clear-btn {
+      background: none; border: 1px solid var(--border); border-radius: 5px;
+      color: var(--muted); font-size: 10px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; padding: 3px 7px; transition: color .15s, border-color .15s;
+    }
+    .clear-btn:hover { color: var(--red); border-color: var(--red); }
+    .log-list { max-height: 240px; overflow-y: auto; padding: 0 10px 10px; }
+    .log-list::-webkit-scrollbar { width: 4px; }
+    .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .log-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 8px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      margin-bottom: 6px; min-width: 0;
+    }
+    .log-thumb {
+      width: 38px; height: 28px; border-radius: 5px;
+      object-fit: cover; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .log-thumb-placeholder {
+      width: 38px; height: 28px; border-radius: 5px;
+      background: var(--surface2); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; border: 1px solid var(--border);
+    }
+    .log-info { flex: 1; min-width: 0; }
+    .log-label { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .log-meta  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .whitelist-btn {
+      background: none; border: 1px solid var(--border); border-radius: 5px;
+      color: var(--muted); font-size: 10px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; padding: 3px 7px; flex-shrink: 0; transition: all .15s;
+    }
+    .whitelist-btn:hover { color: var(--green); border-color: var(--green); }
+    .whitelist-btn.whitelisted { color: var(--green); border-color: var(--green); background: rgba(62,207,142,.08); }
+
+    .empty-state { text-align: center; padding: 26px 15px; color: var(--muted); font-size: 12px; }
+    .empty-state .emoji { font-size: 22px; display: block; margin-bottom: 6px; }
+
+    /* ── Whitelist ── */
+    .wl-list { max-height: 270px; overflow-y: auto; padding: 8px 10px 10px; }
+    .wl-list::-webkit-scrollbar { width: 4px; }
+    .wl-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .wl-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 8px; border-radius: 8px;
+      background: var(--surface); border: 1px solid rgba(62,207,142,.2);
+      margin-bottom: 6px;
+    }
+    .wl-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+    .wl-label { flex: 1; font-size: 11px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wl-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 14px; line-height: 1; transition: color .15s; padding: 0 2px;
+    }
+    .wl-remove:hover { color: var(--red); }
+
+    /* ── Keywords / Actors shared input panel ── */
+    .kw-panel, .actor-panel { padding: 10px 10px 12px; }
+    .kw-input-row, .actor-input-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .kw-input, .actor-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 12px; padding: 7px 10px; outline: none; transition: border-color .15s;
+    }
+    .kw-input::placeholder, .actor-input::placeholder { color: var(--muted); }
+    .kw-input:focus { border-color: var(--accent); }
+    .actor-input:focus { border-color: var(--pink); }
+    .kw-add-btn {
+      background: var(--accent); border: none; border-radius: 7px;
+      color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px;
+      font-weight: 600; padding: 7px 13px; cursor: pointer; transition: opacity .15s;
+    }
+    .kw-add-btn:hover { opacity: .85; }
+    .actor-add-btn {
+      background: var(--pink); border: none; border-radius: 7px;
+      color: #fff; font-family: 'DM Sans', sans-serif; font-size: 12px;
+      font-weight: 600; padding: 7px 13px; cursor: pointer; transition: opacity .15s;
+    }
+    .actor-add-btn:hover { opacity: .85; }
+
+    .kw-section-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted); margin-bottom: 7px; margin-top: 4px;
+    }
+    .kw-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .kw-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--surface); border: 1px solid rgba(62,207,142,.35);
+      border-radius: 20px; padding: 4px 10px 4px 11px;
+      font-size: 11px; color: var(--text);
+    }
+    .kw-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 13px; line-height: 1; padding: 0; transition: color .15s;
+    }
+    .kw-remove:hover { color: var(--red); }
+
+    /* ── Actors ── */
+    .actor-desc {
+      font-size: 11px; color: var(--muted); margin-bottom: 10px;
+      line-height: 1.5; padding: 8px 10px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .actor-desc strong { color: var(--pink); }
+    .actor-list { display: flex; flex-direction: column; gap: 5px; max-height: 200px; overflow-y: auto; }
+    .actor-list::-webkit-scrollbar { width: 4px; }
+    .actor-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .actor-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 8px;
+      background: var(--surface); border: 1px solid rgba(255,99,195,.2);
+    }
+    .actor-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); flex-shrink: 0; }
+    .actor-name { flex: 1; font-size: 11px; font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .actor-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 14px; line-height: 1; transition: color .15s; padding: 0 2px;
+    }
+    .actor-remove:hover { color: var(--red); }
+
+    /* ── Badges on tabs ── */
+    .tab-badge {
+      display: inline-block; font-size: 9px; font-weight: 700;
+      padding: 1px 4px; border-radius: 8px; margin-left: 3px;
+      vertical-align: middle; line-height: 1.4;
+    }
+    .tab-badge.pink { background: var(--pink); color: #fff; }
+    .tab-badge.green { background: var(--green); color: #000; }
+
+    /* ── Import / Export panel ── */
+    .ie-panel { padding: 10px 10px 14px; }
+    .ie-section-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted); margin-bottom: 8px; margin-top: 4px;
+    }
+    .ie-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .ie-btn {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500; padding: 9px 8px; cursor: pointer;
+      transition: border-color .15s, color .15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .ie-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .ie-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+    .ie-info {
+      font-size: 11px; color: var(--muted); line-height: 1.6;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 9px 11px;
+    }
+    .ie-info strong { color: var(--text); }
+
+    .ie-toast {
+      display: none; margin-top: 10px; padding: 8px 11px;
+      background: rgba(62,207,142,.12); border: 1px solid rgba(62,207,142,.3);
+      border-radius: 8px; font-size: 11px; color: var(--green);
+    }
+    .ie-toast.show { display: block; }
+    .ie-toast.error { background: rgba(255,92,92,.1); border-color: rgba(255,92,92,.3); color: var(--red); }
+
+    /* file input hidden behind label — display:none prevents native dialog in extensions */
+    #import-file {
+      position: absolute;
+      width: 1px; height: 1px;
+      opacity: 0; overflow: hidden;
+      pointer-events: none;
+      clip: rect(0,0,0,0);
+    }
+    label.ie-btn { cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🚫</div>
+  <div class="header-text">
+    <h1>Adult Content Filter</h1>
+    <p>Keyword &amp; actor-based content blocker</p>
+  </div>
+</div>
+
+<div class="toggle-row">
+  <div class="toggle-label">
+    <strong>Filter Active</strong>
+    <span>Hide matching content on this page</span>
+  </div>
+  <label class="switch">
+    <input type="checkbox" id="toggle" checked>
+    <div class="switch-track"></div>
+  </label>
+</div>
+
+<div class="stats">
+  <div class="stat-box">
+    <div class="stat-value" id="stat-hidden">—</div>
+    <div class="stat-label">Items Hidden</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" id="stat-session">—</div>
+    <div class="stat-label">This Session</div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <div class="status-text" id="status-text"><strong>Filter on</strong> — scanning this page</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="log">Hidden</button>
+  <button class="tab-btn" data-tab="whitelist">Whitelist</button>
+  <button class="tab-btn" data-tab="keywords">
+    Keywords<span class="tab-badge green" id="kw-badge" style="display:none"></span>
+  </button>
+  <button class="tab-btn" data-tab="actors">
+    Actors<span class="tab-badge pink" id="actor-tab-badge" style="display:none"></span>
+  </button>
+  <button class="tab-btn" data-tab="settings">⚙</button>
+</div>
+
+<!-- Log panel -->
+<div class="tab-panel active" id="tab-log">
+  <div class="log-header">
+    <span id="log-count">0 items</span>
+    <button class="clear-btn" id="clear-log-btn">Clear log</button>
+  </div>
+  <div class="log-list" id="log-list">
+    <div class="empty-state"><span class="emoji">✨</span>No items hidden yet on this page</div>
+  </div>
+</div>
+
+<!-- Whitelist panel -->
+<div class="tab-panel" id="tab-whitelist">
+  <div class="wl-list" id="wl-list">
+    <div class="empty-state"><span class="emoji">📋</span>No whitelisted items yet.<br>Use "Allow" on hidden items to add them.</div>
+  </div>
+</div>
+
+<!-- Keywords panel -->
+<div class="tab-panel" id="tab-keywords">
+  <div class="kw-panel">
+    <div class="kw-input-row">
+      <input class="kw-input" id="kw-input" type="text" placeholder="Add keyword…" maxlength="80">
+      <button class="kw-add-btn" id="kw-add-btn">Add</button>
+    </div>
+    <div class="kw-section-label">Your keywords</div>
+    <div class="kw-list" id="kw-custom-list">
+      <span style="font-size:11px;color:var(--muted)">No keywords yet.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Actors panel -->
+<div class="tab-panel" id="tab-actors">
+  <div class="actor-panel">
+    <div class="actor-desc">
+      Enter a <strong>performer name</strong> exactly as shown (e.g. <em>Melody Marks</em>).
+      Any video featuring that person will be hidden.
+    </div>
+    <div class="actor-input-row">
+      <input class="actor-input" id="actor-input" type="text" placeholder="Performer name…" maxlength="80">
+      <button class="actor-add-btn" id="actor-add-btn">Block</button>
+    </div>
+    <div class="kw-section-label">Blocked performers</div>
+    <div class="actor-list" id="actor-list">
+      <div class="empty-state" style="padding:12px 0"><span class="emoji">🎭</span>No blocked performers yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings / Import-Export panel -->
+<div class="tab-panel" id="tab-settings">
+  <div class="ie-panel">
+
+    <div class="ie-section-label">Export settings</div>
+    <div class="ie-row">
+      <button class="ie-btn" id="export-btn">⬇ Export to file</button>
+    </div>
+
+    <div class="ie-section-label">Import settings</div>
+    <div class="ie-row">
+      <label class="ie-btn" for="import-file">⬆ Import from file</label>
+      <input type="file" id="import-file" accept=".json">
+    </div>
+
+    <div class="ie-section-label">Danger zone</div>
+    <div class="ie-row">
+      <button class="ie-btn danger" id="reset-btn">🗑 Reset all settings</button>
+    </div>
+
+    <div class="ie-info">
+      Export saves your <strong>keywords</strong>, <strong>blocked performers</strong>,
+      and <strong>whitelist</strong> as a JSON file you can import on any browser.
+      Filter state and hidden log are not exported.
+    </div>
+
+    <div class="ie-toast" id="ie-toast"></div>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
