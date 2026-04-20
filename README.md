@@ -12,3 +12,25 @@ Add any words or phrases to the Keywords list and the extension will automatical
 
 ## Privacy
 This extension collects no data whatsoever. All settings are stored locally in your browser using the standard extension storage API and never leave your device.
+
+## How to Use
+
+You can install the extension with one click from [here](https://addons.mozilla.org/pl/firefox/addon/adult-content-filter/).
+
+## License
+
+This project is licensed under custom EULA.
+
+This software is provided **free of charge** for personal and non-commercial use.
+
+**You are allowed to:**
+- download, install and use the software,
+- modify the source code for your own needs,
+- redistribute (re-upload, mirror, share) the software, as long as it remains completely free and this license is included.
+
+**You are not allowed without written permission from the author to:**
+- sell, license, rent or use the software for any commercial purpose (including in commercial products, SaaS, websites with ads, etc.),
+- charge any fee for the software or its copies,
+- remove or alter copyright notices.
+
+All rights reserved. Violation of the above terms may result in legal liability.
