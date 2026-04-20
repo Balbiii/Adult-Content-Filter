@@ -21,6 +21,8 @@ You can install the extension with one click from [here](https://addons.mozilla.
 
 This project is licensed under custom EULA.
 
+Adult Content Filter © 2026 
+
 This software is provided **free of charge** for personal and non-commercial use.
 
 **You are allowed to:**
